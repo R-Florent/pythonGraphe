@@ -1,27 +1,21 @@
 import geopandas as gpd
 import pandas as pd
+from shapely.geometry import Point
 
-# Définir les coordonnées des quatre points
-sud_est = (41, 8.5)
-sud_ouest = (42, -6)
-nord_ouest = (51.5, -6)
-nord_est = (51.5, 8.5)
+# Lire le fichier CSV avec les coordonnées des villes
+villes_df = pd.read_csv('villes_france.csv')
 
-# Créer les limites du polygone contenant la France métropolitaine
-limites_france = gpd.GeoSeries([sud_est, sud_ouest, nord_ouest, nord_est]).convex_hull
+# Filtrer les villes en fonction des conditions de latitude et longitude
+villes_filtrees = villes_df[
+    (villes_df['latitude'] >= 41) & (villes_df['latitude'] <= 51.5) &
+    (villes_df['longitude'] >= -5) & (villes_df['longitude'] <= 8.2)
+]
 
-# Lire le fichier CSV contenant les coordonnées des villes
-villes_df = pd.read_csv('chemin_vers_le_fichier/villes.csv')
+# Créer les objets géographiques Point à partir des colonnes latitude et longitude
+geometry = [Point(xy) for xy in zip(villes_filtrees['longitude'], villes_filtrees['latitude'])]
 
-# Filtrer les coordonnées des villes en France métropolitaine
-villes_france_metropolitaine = []
-for index, ville in villes_df.iterrows():
-    point = gpd.Point(ville['longitude'], ville['latitude'])
-    if point.within(limites_france):
-        villes_france_metropolitaine.append(ville)
+# Créer un GeoDataFrame à partir des données et des objets géographiques
+gdf = gpd.GeoDataFrame(villes_filtrees)
 
-# Créer un nouveau DataFrame avec les coordonnées filtrées
-nouveau_df = pd.DataFrame(villes_france_metropolitaine)
-
-# Écrire le nouveau DataFrame dans un fichier CSV
-nouveau_df.to_csv('chemin_vers_le_fichier/villes_france_metropolitaine.csv', index=False)
+# Écrire le GeoDataFrame dans un fichier CSV
+gdf.to_csv('villes_france_metropolitaine.csv', index=False)
